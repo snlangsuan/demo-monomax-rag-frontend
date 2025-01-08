@@ -15,6 +15,7 @@
               </div>
               <div class="chat-box-bubble__arrow"></div>
             </div>
+            <div class="chat-box-message-box__timestamp"><div>{{ msg.timestamp.format('HH:mm') }}</div></div>
           </div>
         </div>
       </li>
@@ -55,8 +56,8 @@ const text = ref<string>('')
 const messages = computed(() => props.modelValue)
 
 function handleSendMessage() {
-  if (!text) return
-  emit('send', text)
+  if (!text.value) return
+  emit('send', text.value)
   text.value = ''
 }
 </script>
@@ -124,12 +125,30 @@ function handleSendMessage() {
       &__profile {
         width: 56px;
       }
+
+      &__content {
+        position: relative;
+      }
+
+      &__timestamp {
+        position: absolute;
+        right: -2rem;
+        bottom: 0;
+        font-size: 0.6rem;
+      }
     }
 
     &--me {
-      #{$message-ele}-box__profile {
-        visibility: hidden;
-        flex: 1;
+      #{$message-ele}-box {
+        &__profile {
+          visibility: hidden;
+          flex: 1;
+        }
+
+        &__timestamp {
+          right: 0;
+          left: -2rem;
+        }
       }
 
       #{$root-ele}-bubble__arrow {
