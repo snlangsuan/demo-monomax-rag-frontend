@@ -1,0 +1,1 @@
+export const MONOMAX_OFFICIAL_ID = '030e6ec7-c3c6-4759-93a1-811f2c7b7519'

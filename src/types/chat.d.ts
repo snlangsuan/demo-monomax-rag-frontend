@@ -1,18 +1,26 @@
-import type { Dayjs } from 'dayjs'
+import type { IUserAccount } from './user'
 
-export interface IChatAccount {
-  id: string
-  display_name: string
-  profile: string
+export type TMessageType = 'text' | 'image'
+
+export interface IChatMessageObject {
+  text: string
+  type: TMessageType
 }
 
 export interface IChatMessage {
+  created_at: string
   id: string
-  message: {
-    text?: string
-    images?: Array<string>
-  }
-  from: IChatAccount
-  to: IChatAccount
-  timestamp: Dayjs
+  is_bot: boolean
+  message: IChatMessageObject
+  room: string
+  source: IUserAccount
+}
+
+export interface IChatRoom {
+  created_at?: string
+  id: string
+  members: Array<IUserAccount>
+  message?: IChatMessageObject
+  name?: string
+  profile?: string
 }
