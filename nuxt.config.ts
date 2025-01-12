@@ -20,7 +20,14 @@ export default defineNuxtConfig({
       config.plugins!.push(vuetify())
     },
   },
-  modules: ['@nuxt/eslint', '@pinia/nuxt', '@nuxtjs/google-fonts', '@pinia-plugin-persistedstate/nuxt'],
+  modules: [
+    '@nuxt/eslint',
+    '@pinia/nuxt',
+    '@nuxtjs/google-fonts',
+    '@pinia-plugin-persistedstate/nuxt',
+    '@nuxt/content',
+    '@nuxtjs/mdc',
+  ],
   pinia: {
     storesDirs: ['./stores/**'],
   },
