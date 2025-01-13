@@ -2,12 +2,16 @@ import type { IChatMessage, IChatMessageObject, IChatRoom } from '~/types/chat'
 import type { IPaginationItemResponse } from '~/types/share'
 
 export const useChatApi = () => {
-  const getRoomList = async (): Promise<IPaginationItemResponse<IChatRoom>> => {
-    const result = await useGet<IPaginationItemResponse<IChatRoom>>('/chat/rooms')
+  const getRoomList = async (hasMessage: boolean = false): Promise<IPaginationItemResponse<IChatRoom>> => {
+    const result = await useGet<IPaginationItemResponse<IChatRoom>>('/chat/rooms', { only_msg: hasMessage })
     return result
   }
   const createRoom = async (members: Array<string>): Promise<IChatRoom> => {
     const result = await usePost<IChatRoom>('/chat/rooms', { members })
+    return result
+  }
+  const getRoom = async (roomId: string): Promise<IChatRoom> => {
+    const result = await useGet<IChatRoom>(`/chat/rooms/${roomId}`)
     return result
   }
   const sendMessage = async (
@@ -26,5 +30,5 @@ export const useChatApi = () => {
     })
     return result
   }
-  return { createRoom, getMessageHistory, getRoomList, sendMessage }
+  return { createRoom, getMessageHistory, getRoom, getRoomList, sendMessage }
 }

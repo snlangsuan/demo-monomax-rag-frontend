@@ -137,7 +137,7 @@ defineExpose({ scrollDown })
   }
 
   &-bubble {
-    width: 320px;
+    width: 240px;
     height: auto;
     display: block;
     background: #f5f5f5;

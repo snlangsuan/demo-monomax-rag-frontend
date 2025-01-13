@@ -70,8 +70,8 @@ async function handleOnSendMessage(text: string) {
 function initSocket(roomId?: string) {
   const token = sessionStorage.getItem('auth.token')
   socketInstance = io(config.public.socketChat, { auth: { token } })
-  socketInstance.on('connection', async (_socket) => {
-    console.log('connected', roomId)
+  socketInstance.on('connection', async (socket) => {
+    console.log('connected', socket)
     if (roomId) await socketInstance?.emit('join', roomId)
   })
   socketInstance.on('connect_error', (error) => {
@@ -119,12 +119,11 @@ async function initChat() {
   const profile = await userApi.getMe()
   currentUser.value = profile
 
-  const roomResult = await chatApi.getRoomList()
-  let room = roomResult.items.length > 0 ? roomResult.items[0] : null
+  const roomList = await chatApi.getRoomList()
+  let room = roomList.items.length > 0 ? roomList.items[0] : null
   if (!room) room = await chatApi.createRoom([MONOMAX_OFFICIAL_ID])
-
   currentRoom.value = room
-  const roomMembers = room.members
+  const roomMembers = currentRoom.value!.members
   targetUser.value = roomMembers.find((member) => member.id !== currentUser.value!.id)
 }
 
@@ -137,6 +136,7 @@ async function handleOnReset() {
   await initChat()
   pageLoading.value = false
   chatHistories.value = []
+  if (currentRoom.value!.id) await socketInstance?.emit('join', currentRoom.value!.id)
 }
 
 async function init() {
@@ -150,6 +150,9 @@ async function init() {
   console.log('room', currentRoom.value)
   pageLoading.value = false
   initSocket(currentRoom.value!.id)
+  nextTick(() => {
+    chatBoxRef.value?.scrollDown()
+  })
 }
 
 onMounted(() => {

@@ -1,6 +1,6 @@
 <template>
   <v-list lines="two" class="pa-0" :height="height" density="compact">
-    <template v-for="(user, i) in modelValue" :key="user.id">
+    <template v-for="(user, i) in messages" :key="user.id">
       <v-list-item :max-height="48" @click="handleOnSelect(user)">
         <template #prepend>
           <v-avatar variant="outlined" color="grey-lighten-2" :size="32">
@@ -19,7 +19,7 @@
 import type { PropType } from 'vue'
 import type { IChatRoom } from '~/types/chat.d'
 
-defineProps({
+const props = defineProps({
   height: {
     default: 200,
     type: Number,
@@ -29,6 +29,8 @@ defineProps({
     type: Array as PropType<Array<IChatRoom>>,
   },
 })
+
+const messages = computed(() => props.modelValue.filter((msg) => !!msg.message))
 
 const emit = defineEmits(['click'])
 

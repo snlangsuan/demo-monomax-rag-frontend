@@ -4,13 +4,35 @@
       <v-app-bar-title>Admin Chat</v-app-bar-title>
     </v-app-bar>
     <div class="chat-content">
-      <div :style="{ flex: '0 320px', height: `${windowHeight}px`, overflow: 'hidden' }">
+      <div
+        :class="{ 'chat-content--hide': !!targetUser }"
+        :style="{ flex: '0 320px', height: `${windowHeight}px`, overflow: 'hidden' }"
+      >
         <v-toolbar color="white" density="compact" />
         <v-divider />
         <contact-list v-model="contacts" :height="windowHeight - 48" @click="handleOnSelectRoom" />
       </div>
       <div :style="{ flex: 1, height: `${windowHeight}px`, overflow: 'hidden' }">
-        <v-toolbar :title="targetUser?.display_name ?? ''" color="white" density="compact" />
+        <v-toolbar color="white" density="compact">
+          <v-btn class="chat-content-back" icon @click="handleOnBackContact">
+            <v-icon>mdi-chevron-left</v-icon>
+          </v-btn>
+          <v-toolbar-title>{{ targetUser?.display_name ?? '' }}</v-toolbar-title>
+          <v-spacer />
+          <v-menu v-if="targetUser">
+            <template #activator="{ props }">
+              <v-btn icon="mdi-dots-vertical" variant="text" v-bind="props" />
+            </template>
+            <v-list>
+              <v-list-item @click="handleOnSetResolve">
+                <template #prepend>
+                  <v-icon icon="mdi-message-check" />
+                </template>
+                <v-list-item-title>Resolve</v-list-item-title>
+              </v-list-item>
+            </v-list>
+          </v-menu>
+        </v-toolbar>
         <v-divider />
         <chat-box
           ref="chatBoxRef"
@@ -56,6 +78,10 @@ let timeoutInstance: ReturnType<typeof setTimeout> | null = null
 
 const contacts = ref<Array<IChatRoom>>([])
 
+function handleOnBackContact() {
+  targetUser.value = undefined
+}
+
 async function handleOnSelectRoom(room: IChatRoom) {
   if (socketInstance && currentRoom.value) {
     console.log('leave', currentRoom.value)
@@ -73,9 +99,9 @@ async function handleOnSelectRoom(room: IChatRoom) {
 function initSocket() {
   const token = sessionStorage.getItem('auth.token')
   socketInstance = io(config.public.socketChat, { auth: { token } })
-  socketInstance.on('connection', (_socket) => {
+  socketInstance.on('connection', (socket) => {
     // socketInstance!.emit('join', roomId)
-    console.log('connect')
+    console.log('connected', socket)
   })
   socketInstance.on('connect_error', (error) => {
     console.error(error)
@@ -88,13 +114,31 @@ function initSocket() {
     const message: IChatMessage = typeof data === 'string' ? JSON.parse(data) : data
     const isExist = chatHistories.value.find((msg) => msg.id === message.id)
     if (isExist) return
-    chatHistories.value.push(message)
-    chatBoxRef.value?.scrollDown()
+    if (targetUser.value?.id == message.room) {
+      chatHistories.value.push(message)
+      chatBoxRef.value?.scrollDown()
+    }
+    console.log('message', message)
+    // const contactRoom = contacts.value.find((room) => room.id == message.room)
+    // if (contactRoom) {
+    //   contactRoom.message = message.message
+    // } else {
+    //   getChatRoom()
+    // }
+  })
+
+  socketInstance.on('notify', (data: IChatMessage | string) => {
+    const message: IChatMessage = typeof data === 'string' ? JSON.parse(data) : data
+    console.log('notify', message)
   })
 
   socketInstance.on('rooms', () => {
     console.log('refresh rooms')
   })
+}
+
+async function handleOnSetResolve() {
+  console.log('resolve')
 }
 
 async function getAccount() {
@@ -114,6 +158,16 @@ async function handleOnSendMessage(text: string) {
   await chatApi.sendMessage(currentRoom.value!.id!, message, currentUser.value!.id)
 }
 
+async function getChatRoom() {
+  const roomResult = await chatApi.getRoomList()
+  contacts.value = roomResult.items.map((item) => {
+    const target = item.members.filter((user) => user.id !== currentUser.value!.id)
+    item.name = target.length > 0 ? target[0].display_name : 'Unknown'
+    item.profile = target.length > 0 ? target[0].profile : undefined
+    return item
+  })
+}
+
 async function init() {
   const token = sessionStorage.getItem('auth.token')
   if (!token) await getAccount()
@@ -124,14 +178,8 @@ async function init() {
     profile = await userApi.getMe()
   }
   currentUser.value = profile
+  getChatRoom()
 
-  const roomResult = await chatApi.getRoomList()
-  contacts.value = roomResult.items.map((item) => {
-    const target = item.members.filter((user) => user.id !== currentUser.value!.id)
-    item.name = target.length > 0 ? target[0].display_name : 'Unknown'
-    item.profile = target.length > 0 ? target[0].profile : undefined
-    return item
-  })
   // const history = await chatApi.getMessageHistory(currentRoomId.value!)
   // chatHistories.value = history.items || []
   // console.log(history.items)
@@ -163,6 +211,7 @@ useHead({
 <style lang="scss" scoped>
 .chat-content {
   display: flex;
+  position: relative;
 
   & > * {
     position: relative;
@@ -175,6 +224,35 @@ useHead({
       bottom: 0;
       width: 1px;
       height: 100%;
+    }
+  }
+
+  &-back {
+    opacity: 0;
+  }
+}
+
+@media screen and (max-width: 640px) {
+  .chat-content {
+    & > * {
+      position: absolute;
+      left: 0;
+      right: 0;
+
+      &:first-child {
+        z-index: 2;
+      }
+      &:last-child {
+        z-index: 1;
+      }
+    }
+
+    &--hide {
+      display: none;
+    }
+
+    &-back {
+      opacity: 1;
     }
   }
 }
